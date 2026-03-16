@@ -1,0 +1,16 @@
+{
+  "name": "trello-api-skill",
+  "owner": { "name": "DarkbyteAT" },
+  "metadata": {
+    "description": "Trello REST API skill for Claude Code",
+    "version": "1.0.0",
+    "pluginRoot": "."
+  },
+  "plugins": [
+    {
+      "name": "trello-api",
+      "source": "./",
+      "description": "Query and invoke the Trello REST API using curl with jq-powered OpenAPI spec lookup"
+    }
+  ]
+}
