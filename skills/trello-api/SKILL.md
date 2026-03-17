@@ -10,7 +10,6 @@ Invoke any of the 256 Trello REST API operations using curl, with the official O
 ## Setup
 
 ```bash
-source ~/.zshrc
 ${CLAUDE_PLUGIN_ROOT}/scripts/spec-manager.sh ensure-spec
 ```
 
