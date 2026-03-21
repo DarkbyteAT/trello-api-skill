@@ -1,16 +1,8 @@
 # Trello API Quick Reference
 
-Common curl examples by API group. All commands require auth params: `key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}`
+Common examples by API group using the `trello.sh` wrapper. Auth is handled automatically.
 
-Base URL: `https://api.trello.com/1`
-
-**Important:** Always write curl output to a temp file, then parse with jq. Do not pipe curl directly to jq.
-
-```bash
-# Pattern: curl to file, then jq
-curl -s -o /tmp/trello-response.json "URL"
-jq . /tmp/trello-response.json
-```
+All commands below use the full path: `${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh`
 
 ## Contents
 - [Boards](#boards)
@@ -28,116 +20,91 @@ jq . /tmp/trello-response.json
 
 ```bash
 # Get all boards for authenticated member
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/members/me/boards?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /members/me/boards
 
 # Get a board by ID
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/boards/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}
 
 # Create a board
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/boards?name=My+Board&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /boards name=My+Board
 
 # Update a board
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/boards/{id}?name=New+Name&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /boards/{id} name=New+Name
 
 # Delete a board
-curl -s -o /tmp/trello-response.json -X DELETE "https://api.trello.com/1/boards/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /boards/{id}
 
 # Get lists on a board
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/boards/{id}/lists?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/lists
 
 # Get cards on a board
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/boards/{id}/cards?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/cards
 
 # Get members of a board
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/boards/{id}/members?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/members
 
 # Get labels on a board
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/boards/{id}/labels?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/labels
 ```
 
 ## Lists
 
 ```bash
 # Create a list on a board
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/lists?name=To+Do&idBoard={boardId}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /lists name=To+Do idBoard={boardId}
 
 # Get a list
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/lists/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /lists/{id}
 
 # Update a list (rename)
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/lists/{id}?name=In+Progress&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /lists/{id} name=In+Progress
 
 # Archive a list
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/lists/{id}?closed=true&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /lists/{id} closed=true
 
 # Get cards in a list
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/lists/{id}/cards?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /lists/{id}/cards
 ```
 
 ## Cards
 
 ```bash
 # Create a card
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/cards?name=My+Task&idList={listId}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards name=My+Task idList={listId}
 
 # Create a card with description and due date
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/cards?name=My+Task&idList={listId}&desc=Task+description&due=2025-12-31&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards name=My+Task idList={listId} desc=Task+description due=2025-12-31
 
 # Get a card
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/cards/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /cards/{id}
 
 # Update a card
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/cards/{id}?name=Updated+Name&desc=New+description&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /cards/{id} name=Updated+Name desc=New+description
 
 # Move a card to another list
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/cards/{id}?idList={newListId}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /cards/{id} idList={newListId}
 
 # Add a label to a card
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/cards/{id}/idLabels?value={labelId}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards/{id}/idLabels value={labelId}
 
 # Delete a card
-curl -s -o /tmp/trello-response.json -X DELETE "https://api.trello.com/1/cards/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /cards/{id}
 ```
 
 ## Labels
 
 ```bash
 # Create a label on a board
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/labels?name=Bug&color=red&idBoard={boardId}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /labels name=Bug color=red idBoard={boardId}
 
 # Get a label
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/labels/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /labels/{id}
 
 # Update a label
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/labels/{id}?name=Feature&color=green&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /labels/{id} name=Feature color=green
 
 # Delete a label
-curl -s -o /tmp/trello-response.json -X DELETE "https://api.trello.com/1/labels/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /labels/{id}
 ```
 
 Available label colors: `green`, `yellow`, `orange`, `red`, `purple`, `blue`, `sky`, `lime`, `pink`, `black`, `null` (no color).
@@ -146,111 +113,88 @@ Available label colors: `green`, `yellow`, `orange`, `red`, `purple`, `blue`, `s
 
 ```bash
 # Create a checklist on a card
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/checklists?idCard={cardId}&name=Tasks&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /checklists idCard={cardId} name=Tasks
 
 # Get checklists on a card
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/cards/{cardId}/checklists?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /cards/{cardId}/checklists
 
 # Add an item to a checklist
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/checklists/{checklistId}/checkItems?name=Sub+task&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /checklists/{checklistId}/checkItems name=Sub+task
 
 # Mark checklist item complete
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/cards/{cardId}/checkItem/{checkItemId}?state=complete&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /cards/{cardId}/checkItem/{checkItemId} state=complete
 
 # Mark checklist item incomplete
-curl -s -o /tmp/trello-response.json -X PUT "https://api.trello.com/1/cards/{cardId}/checkItem/{checkItemId}?state=incomplete&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /cards/{cardId}/checkItem/{checkItemId} state=incomplete
 
 # Delete a checklist
-curl -s -o /tmp/trello-response.json -X DELETE "https://api.trello.com/1/checklists/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /checklists/{id}
 ```
 
 ## Comments
 
 ```bash
 # Add a comment to a card
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/cards/{cardId}/actions/comments?text=My+comment&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards/{cardId}/actions/comments text=My+comment
 
 # Get comments on a card (actions filtered to commentCard type)
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/cards/{cardId}/actions?filter=commentCard&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /cards/{cardId}/actions filter=commentCard
 ```
 
 ## Attachments
 
 ```bash
 # List attachments on a card
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/cards/{cardId}/attachments?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /cards/{cardId}/attachments
 
 # Attach a URL to a card
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/cards/{cardId}/attachments?url=https://example.com&name=Link&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards/{cardId}/attachments url=https://example.com name=Link
 
 # Upload a file attachment
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/cards/{cardId}/attachments?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}" \
-  -F "file=@/path/to/file.pdf" -F "name=document.pdf"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards/{cardId}/attachments file=@/path/to/file.pdf name=document.pdf
 
 # Delete an attachment
-curl -s -o /tmp/trello-response.json -X DELETE "https://api.trello.com/1/cards/{cardId}/attachments/{attachmentId}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /cards/{cardId}/attachments/{attachmentId}
 ```
 
 ## Members
 
 ```bash
 # Get current member (me)
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/members/me?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /members/me
 
 # Get a member by ID or username
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/members/{idOrUsername}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /members/{idOrUsername}
 
 # Get boards for a member
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/members/{id}/boards?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /members/{id}/boards
 
 # Get cards assigned to a member
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/members/{id}/cards?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /members/{id}/cards
 ```
 
 ## Search
 
 ```bash
 # Search for cards and boards
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/search?query=my+search+term&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /search query=my+search+term
 
 # Search with filters (cards only, limit results)
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/search?query=bug&modelTypes=cards&cards_limit=10&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /search query=bug modelTypes=cards cards_limit=10
 
 # Search within a specific board
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/search?query=bug&idBoards={boardId}&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /search query=bug idBoards={boardId}
 ```
 
 ## Webhooks
 
 ```bash
 # Create a webhook
-curl -s -o /tmp/trello-response.json -X POST "https://api.trello.com/1/webhooks?callbackURL=https://example.com/webhook&idModel={boardOrCardId}&description=My+webhook&key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /webhooks callbackURL=https://example.com/webhook idModel={boardOrCardId} description=My+webhook
 
 # List webhooks for current token
-curl -s -o /tmp/trello-response.json "https://api.trello.com/1/tokens/${TRELLO_TOKEN}/webhooks?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /tokens/${TRELLO_TOKEN}/webhooks
 
 # Delete a webhook
-curl -s -o /tmp/trello-response.json -X DELETE "https://api.trello.com/1/webhooks/{id}?key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
-jq . /tmp/trello-response.json
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /webhooks/{id}
 ```

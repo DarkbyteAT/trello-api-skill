@@ -1,11 +1,14 @@
 # trello-api
 
-A Claude Code plugin that gives Claude access to the entire Trello REST API (256 operations across 18 API groups) using `curl`. The official OpenAPI spec is cached locally and queried on-demand with `jq`, so Claude can discover and invoke any endpoint without loading the full spec into context.
+A Claude Code plugin that gives Claude access to the entire Trello REST API (256 operations across 18 API groups) using a `trello.sh` wrapper script. The official OpenAPI spec is cached locally and queried on-demand with `jq`, so Claude can discover and invoke any endpoint without loading the full spec into context.
+
+API calls are **auto-approved** via a bundled PreToolUse hook — no manual permission configuration needed.
 
 ## Prerequisites
 
 - `curl` and `jq` installed
-- Trello API credentials set as environment variables:
+- Trello API credentials set as environment variables in your shell profile
+    - _Tip: Ask Claude to help with this!_
 
 ```bash
 export TRELLO_API_KEY="your-api-key"
@@ -13,9 +16,9 @@ export TRELLO_TOKEN="your-api-token"
 ```
 
 Get your credentials at [trello.com/power-ups/admin](https://trello.com/power-ups/admin):
-1. Select your Power-Up (or create one)
+1. Select your Power-Up (or create a new App for Claude Code in your workspace)
 2. Copy the **API Key**
-3. Generate a **Token** using the link on the API key page
+3. Generate a **Token** using the link on the API key page and authorize for your workspace
 
 ## Installation
 
@@ -50,7 +53,9 @@ Once installed, the skill activates when you mention **Trello** in conversation.
 
 1. Ensure the OpenAPI spec is cached and fresh
 2. Look up the relevant endpoint using `jq` queries
-3. Construct and execute the `curl` command with your credentials
+3. Call `trello.sh` with the method, path, and parameters
+
+All API calls go through `trello.sh`, which handles authentication, error detection, and JSON output formatting.
 
 ### Examples
 
@@ -59,6 +64,28 @@ Once installed, the skill activates when you mention **Trello** in conversation.
 - "Search for cards mentioning 'bug' on Trello"
 - "Set up a webhook for my Trello board"
 - "Add a label to this Trello card"
+
+### The Wrapper
+
+`trello.sh` is a thin wrapper around `curl` that:
+
+- Appends your `TRELLO_API_KEY` and `TRELLO_TOKEN` automatically
+- Handles HTTP error detection (4xx/5xx responses)
+- Outputs formatted JSON via `jq`
+- Supports file uploads with `=@` syntax
+- Uses temp files for safe concurrent execution
+
+```
+trello.sh <METHOD> <path> [key=value ...]
+```
+
+### Auto-Approval
+
+The plugin bundles a `PreToolUse` hook that automatically approves calls to plugin scripts (`trello.sh` and `spec-manager.sh`). This is registered via `hooks/hooks.json` and merged into Claude Code's hook system when the plugin is enabled.
+
+The hook includes safety checks — commands containing shell chaining operators (`&&`, `||`, `;`, etc.) are not auto-approved.
+
+No manual permission configuration is needed. If you want to disable auto-approval, you can remove the plugin's hooks via the `/hooks` menu in Claude Code.
 
 ### Updating the Spec
 
@@ -76,14 +103,14 @@ Or run directly:
 
 ## How It Works
 
-The plugin bundles a `spec-manager.sh` script that:
+The plugin bundles two main scripts:
 
-- **Caches** the Trello OpenAPI spec at `~/.claude/cache/trello/swagger.v3.json`
-- **Checks daily** for spec version updates on the Atlassian docs site
-- **Queries** the spec with `jq` to extract only the relevant endpoints, parameters, and schemas
-- Claude then uses the query results to construct precise `curl` commands
+- **`trello.sh`** — API wrapper that replaces raw `curl` calls. Handles auth, error detection, and JSON formatting.
+- **`spec-manager.sh`** — Downloads, caches, and queries the Trello OpenAPI spec. Claude uses this to discover endpoints and parameters.
 
-This means Claude has access to the full Trello API without any of the spec consuming conversation context until needed.
+Plus a PreToolUse hook (`approve-trello.sh`) that auto-approves calls to both scripts, eliminating manual permission prompts.
+
+This means Claude has access to the full Trello API without any of the spec consuming conversation context until needed, and without requiring manual approval for each API call.
 
 ## License
 
