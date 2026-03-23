@@ -1,7 +1,7 @@
 {
   "name": "trello-api",
   "description": "Invoke any Trello REST API endpoint with auto-approved wrapper scripts, powered by the official OpenAPI spec with jq-based lookup",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "author": { "name": "DarkbyteAT" },
   "repository": "https://github.com/DarkbyteAT/trello-api-skill",
   "license": "MIT",

@@ -47,7 +47,7 @@ shift
 # --- URL-encode helper (python3 stdlib — battle-tested, handles all Unicode) ---
 
 urlencode() {
-  python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.stdin.read(), safe=''), end='')" <<< "$1"
+  python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.stdin.read().rstrip('\n'), safe=''), end='')" <<< "$1"
 }
 
 # --- Build curl arguments ---
