@@ -5,9 +5,11 @@ set -euo pipefail
 # Reads JSON from stdin (Claude Code hook input), checks if the command
 # targets a plugin script, and returns an allow decision if safe.
 #
-# Safety: rejects commands containing shell chaining operators (&&, ||, ;,
-# backticks, subshells) to prevent injection. Pipes (|) are allowed only
-# when every downstream command is on the SAFE_PIPE_TARGETS whitelist.
+# Safety: strips quoted strings first, then rejects commands containing
+# unquoted shell chaining operators (&&, ||, ;, backticks, subshells).
+# Pipes (|) are allowed only when every downstream command is on the
+# SAFE_PIPE_TARGETS whitelist. Metacharacters inside quoted values
+# (e.g. Markdown backticks in card descriptions) are safe.
 
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
@@ -35,19 +37,20 @@ if [[ "$MATCHED" != "true" ]]; then
   exit 0
 fi
 
-# Security: reject commands with shell chaining operators (excluding pipe)
-for pattern in '&&' '||' ';' '`' '$(' '<('; do
-  if [[ "$COMMAND" == *"$pattern"* ]]; then
-    exit 0
-  fi
-done
-
 # Whitelist of safe read-only tools allowed after a pipe
 SAFE_PIPE_TARGETS="jq grep head tail wc sort uniq cat less tee cut tr sed awk column"
 
-# Strip quoted strings so pipes inside jq filters (e.g. '.[] | {name}')
-# are not mistaken for shell pipes.
+# Strip quoted strings so shell metacharacters inside values (e.g. backticks
+# in Markdown inline code, pipes in jq filters) are not mistaken for shell syntax.
 UNQUOTED=$(echo "$COMMAND" | sed "s/'[^']*'//g" | sed 's/"[^"]*"//g')
+
+# Security: reject commands with shell chaining operators (checked against
+# the unquoted command so that metacharacters inside quoted values are safe)
+for pattern in '&&' '||' ';' '`' '$(' '<('; do
+  if [[ "$UNQUOTED" == *"$pattern"* ]]; then
+    exit 0
+  fi
+done
 
 # If the command contains actual shell pipes, validate every downstream segment
 if [[ "$UNQUOTED" == *"|"* ]]; then
