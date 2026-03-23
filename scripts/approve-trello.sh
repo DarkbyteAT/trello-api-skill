@@ -44,7 +44,10 @@ SAFE_PIPE_TARGETS="jq grep head tail wc sort uniq cat less tee cut tr sed awk co
 # in Markdown inline code, pipes in jq filters) are not mistaken for shell syntax.
 # Collapse newlines first so multiline quoted values (card descriptions) are
 # handled correctly — BSD sed only matches within single lines.
-UNQUOTED=$(printf '%s' "$COMMAND" | tr '\n' ' ' | sed "s/'[^']*'//g" | sed 's/"[^"]*"//g')
+# IMPORTANT: double-quoted strings are stripped FIRST so that apostrophes
+# inside double-quoted values (e.g. "the request's team") are consumed before
+# the single-quote pass, which would otherwise treat them as delimiters.
+UNQUOTED=$(printf '%s' "$COMMAND" | tr '\n' ' ' | sed 's/"[^"]*"//g' | sed "s/'[^']*'//g")
 
 # Security: reject commands with shell chaining operators (checked against
 # the unquoted command so that metacharacters inside quoted values are safe)
