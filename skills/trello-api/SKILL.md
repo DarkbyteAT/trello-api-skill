@@ -63,11 +63,11 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}
 # GET with query params
 ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/cards filter=open
 
-# POST
-${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards name=My+Task idList={listId}
+# POST (values are auto-encoded — pass plain text)
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards name=My Task idList={listId}
 
-# PUT
-${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /cards/{id} name=Updated+Name
+# PUT (special characters like &, #, ? are handled automatically)
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh PUT /cards/{id} "name=Q&A Session"
 
 # DELETE
 ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /cards/{id}
@@ -76,7 +76,7 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh DELETE /cards/{id}
 ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards/{id}/attachments file=@/path/to/doc.pdf name=document.pdf
 ```
 
-The wrapper handles auth, temp files, HTTP error detection, and JSON formatting. Use `+` for spaces in values or URL-encode them.
+The wrapper handles auth, temp files, HTTP error detection, JSON formatting, and **automatic URL-encoding of all values**. Pass values as plain text — do not pre-encode them.
 
 **Piping** is supported and auto-approved for whitelisted read-only tools. The full list is defined in `SAFE_PIPE_TARGETS` in @scripts/approve-trello.sh. Common examples:
 
@@ -167,6 +167,6 @@ For examples of common operations (boards, cards, lists, labels, search, webhook
 | Adding auth params manually | The wrapper adds `key=` and `token=` automatically |
 | Using raw curl instead of trello.sh | Always use the wrapper — it handles auth, errors, and output |
 | Using request body for mutations | Trello uses query params for most mutations, not JSON bodies |
-| Not URL-encoding values | Use `+` for spaces in key=value params |
+| Pre-encoding values with `+` or `%XX` | Values are auto-encoded — pass plain text, not pre-encoded |
 | Looking for tags in spec | Tags are empty; group endpoints by path prefix |
 | Missing path-level params | Always merge path-level and operation-level parameters |

@@ -4,11 +4,13 @@ set -euo pipefail
 # Trello API wrapper
 # Usage: trello.sh <METHOD> <path> [key=value ...]
 #
+# Values are automatically URL-encoded — pass them as plain text.
+#
 # Examples:
 #   trello.sh GET /members/me
 #   trello.sh GET /boards/abc123/lists
-#   trello.sh POST /cards name=My+Task idList=abc123
-#   trello.sh PUT /cards/abc123 name=Updated+Name
+#   trello.sh POST /cards name=My Task idList=abc123
+#   trello.sh PUT /cards/abc123 "name=Q&A Session"
 #   trello.sh DELETE /cards/abc123
 #   trello.sh POST /cards/abc123/attachments file=@/path/to/doc.pdf
 
@@ -42,6 +44,12 @@ shift
 API_PATH="$1"
 shift
 
+# --- URL-encode helper (python3 stdlib — battle-tested, handles all Unicode) ---
+
+urlencode() {
+  python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.stdin.read(), safe=''), end='')" <<< "$1"
+}
+
 # --- Build curl arguments ---
 
 TMPFILE=$(mktemp /tmp/trello-XXXXXX.json)
@@ -61,10 +69,12 @@ for param in "$@"; do
   fi
 done
 
-# Build query string: auth + user params
+# Build query string: auth + URL-encoded user params
 QUERY="key=${TRELLO_API_KEY}&token=${TRELLO_TOKEN}"
 for param in "${QUERY_PARAMS[@]+"${QUERY_PARAMS[@]}"}"; do
-  QUERY="${QUERY}&${param}"
+  KEY="${param%%=*}"
+  VALUE="${param#*=}"
+  QUERY="${QUERY}&${KEY}=$(urlencode "$VALUE")"
 done
 
 URL="${BASE_URL}${API_PATH}?${QUERY}"
