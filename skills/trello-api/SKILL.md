@@ -21,6 +21,8 @@ Run `ensure-spec` once per session. It downloads the spec on first use and check
 
 All requests require env vars `TRELLO_API_KEY` and `TRELLO_TOKEN`. The wrapper appends these automatically — do not add them to calls.
 
+Use `/members/me` as a shorthand for the authenticated user — Trello resolves `me` to the member ID associated with the token, so you never need to hardcode or look up your own member ID.
+
 ## Workflow
 
 ```dot
