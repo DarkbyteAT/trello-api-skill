@@ -45,10 +45,14 @@ done
 # Whitelist of safe read-only tools allowed after a pipe
 SAFE_PIPE_TARGETS="jq grep head tail wc sort uniq cat less tee cut tr sed awk column"
 
-# If the command contains pipes, validate every downstream segment
-if [[ "$COMMAND" == *"|"* ]]; then
+# Strip quoted strings so pipes inside jq filters (e.g. '.[] | {name}')
+# are not mistaken for shell pipes.
+UNQUOTED=$(echo "$COMMAND" | sed "s/'[^']*'//g" | sed 's/"[^"]*"//g')
+
+# If the command contains actual shell pipes, validate every downstream segment
+if [[ "$UNQUOTED" == *"|"* ]]; then
   # Split on pipe and check each segment after the first (the trello.sh call)
-  REST="${COMMAND#*|}"
+  REST="${UNQUOTED#*|}"
   while [[ -n "$REST" ]]; do
     # Extract the current pipe segment (up to the next pipe, or the rest)
     if [[ "$REST" == *"|"* ]]; then
