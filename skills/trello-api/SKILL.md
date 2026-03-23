@@ -76,6 +76,24 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh POST /cards/{id}/attachments file=@/path
 
 The wrapper handles auth, temp files, HTTP error detection, and JSON formatting. Use `+` for spaces in values or URL-encode them.
 
+**Piping** is supported and auto-approved for whitelisted read-only tools. The full list is defined in `SAFE_PIPE_TARGETS` in @scripts/approve-trello.sh. Common examples:
+
+```bash
+# Extract specific fields with jq
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/cards | jq '.[].name'
+
+# Filter and format
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/labels | jq '.[] | {name, color, id}'
+
+# Chain multiple safe pipes
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/cards | jq '.[].name' | sort
+
+# Search output with grep
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /boards/{id}/cards | grep -i "bug"
+```
+
+Non-whitelisted commands (e.g., `bash`, `sh`, `xargs`) after a pipe will not be auto-approved.
+
 ## Spec Queries
 
 All queries use: `${CLAUDE_PLUGIN_ROOT}/scripts/spec-manager.sh query [jq-args...] '<expression>'`

@@ -3,7 +3,7 @@
   "owner": { "name": "DarkbyteAT" },
   "metadata": {
     "description": "Trello REST API skill for Claude Code",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "pluginRoot": "."
   },
   "plugins": [
