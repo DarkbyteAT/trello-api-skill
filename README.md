@@ -112,6 +112,42 @@ Plus a PreToolUse hook (`approve-trello.sh`) that auto-approves calls to both sc
 
 This means Claude has access to the full Trello API without any of the spec consuming conversation context until needed, and without requiring manual approval for each API call.
 
+## Contributing
+
+Contributions are welcome — bug fixes, new features, documentation improvements, and especially help building out automated testing.
+
+### Getting Started
+
+1. Fork and clone the repo
+2. Install your local copy as a plugin:
+   ```
+   /plugin install --from /path/to/trello-api-skill
+   ```
+3. Make sure `TRELLO_API_KEY` and `TRELLO_TOKEN` are set in your shell profile
+
+### Project Layout
+
+The plugin has three scripts in `scripts/`:
+
+- **`trello.sh`** — API wrapper. Handles auth, URL-encoding, error detection, and JSON formatting.
+- **`spec-manager.sh`** — Downloads, caches, and queries the Trello OpenAPI spec via `jq`.
+- **`approve-trello.sh`** — PreToolUse hook that auto-approves calls to the other two scripts. Contains security checks that reject shell chaining operators while allowing safe pipes to read-only tools like `jq` and `grep`. This is the most sensitive part of the codebase — changes here affect what gets auto-approved, so take extra care.
+
+### Testing
+
+There's no automated test suite yet — testing is manual:
+
+1. Install the plugin from your local clone
+2. Try a range of Trello operations (create cards, search, update labels, etc.)
+3. Verify the auto-approve hook accepts legitimate commands and rejects unsafe ones (e.g. commands with `&&`, `;`, or unwhitelisted pipes)
+4. Test with values that contain special characters (newlines, `#`, `&`, apostrophes, backticks in Markdown) since these have been a recurring source of bugs
+
+An automated test harness — particularly for the hook's security checks — would be a valuable contribution.
+
+### Submitting Changes
+
+Fork the repo, make your changes, and open a pull request. Keep PRs focused on a single concern when possible.
+
 ## License
 
 MIT
