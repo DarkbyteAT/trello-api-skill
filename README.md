@@ -153,6 +153,19 @@ There's no automated test suite yet — testing is manual:
 
 An automated test harness — particularly for the hook's security checks — would be a valuable contribution.
 
+### Versioning and Releases
+
+This plugin uses semantic versioning with git tags (`v2.1.5`, `v2.2.0`, etc.). When merging changes:
+
+1. **Bump the version tag** — patch for bug fixes, minor for new features/skills, major for breaking changes
+2. **Create a GitHub release** from the new tag with a changelog summary
+
+```bash
+git tag v2.x.x
+git push origin v2.x.x
+gh release create v2.x.x --title "v2.x.x" --notes "changelog here"
+```
+
 ### Submitting Changes
 
 Fork the repo, make your changes, and open a pull request. Keep PRs focused on a single concern when possible.
