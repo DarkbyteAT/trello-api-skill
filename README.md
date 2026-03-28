@@ -4,6 +4,15 @@ A Claude Code plugin that gives Claude access to the entire Trello REST API (256
 
 API calls are **auto-approved** via a bundled PreToolUse hook — no manual permission configuration needed.
 
+## Skills
+
+This plugin ships two skills:
+
+| Skill | Description |
+|-------|-------------|
+| **trello-api** | Query and invoke any of the 256 Trello REST API operations using the `trello.sh` wrapper |
+| **executing-trello-waves** | Orchestrate parallel execution of Trello implementation cards using git worktrees and subagents — identifies ready cards, analyses file conflicts, dispatches agents, reviews output, ships PRs, and manages the full Trello card lifecycle |
+
 ## Prerequisites
 
 - `curl` and `jq` installed
