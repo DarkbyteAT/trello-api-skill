@@ -28,11 +28,8 @@ fi
 # Patterns that indicate a Trello card was referenced
 CARD_REFERENCED=false
 
-if grep -qE 'trello\.sh (GET|POST|PUT|DELETE) /cards/' "$TRANSCRIPT_PATH"; then
-  CARD_REFERENCED=true
-elif grep -qE 'https://trello\.com/c/' "$TRANSCRIPT_PATH"; then
-  CARD_REFERENCED=true
-elif grep -qE '/cards/[0-9a-f]{24}' "$TRANSCRIPT_PATH"; then
+# Single grep pass for all card reference patterns
+if grep -qE 'trello\.sh (GET|POST|PUT|DELETE) .*/cards|https://trello\.com/c/|/cards/[0-9a-f]{24}' "$TRANSCRIPT_PATH"; then
   CARD_REFERENCED=true
 fi
 
@@ -41,26 +38,10 @@ if [[ "$CARD_REFERENCED" != "true" ]]; then
   exit 0
 fi
 
-# Patterns that indicate board state was actually updated.
-# Consolidated to avoid redundant/overlapping patterns.
+# Any POST, PUT, or DELETE targeting cards or checkitems counts as an update.
+# Single grep pass covers creation, mutation, deletion, and sub-resources.
 CARD_UPDATED=false
-
-# Card moves via query params: trello.sh PUT /cards/{id} idList={listId}
-if grep -qE 'trello\.sh PUT /cards/[0-9a-f]{24}.*idList=' "$TRANSCRIPT_PATH"; then
-  CARD_UPDATED=true
-# General card PUT (catches any update to a card)
-elif grep -qE 'trello\.sh PUT /cards/[0-9a-f]{24}' "$TRANSCRIPT_PATH"; then
-  CARD_UPDATED=true
-# Label changes
-elif grep -qE 'trello\.sh (PUT|POST) /cards/.*/idLabels' "$TRANSCRIPT_PATH"; then
-  CARD_UPDATED=true
-# Comments
-elif grep -qE 'trello\.sh POST /cards/.*/actions/comments' "$TRANSCRIPT_PATH"; then
-  CARD_UPDATED=true
-# Checklist item updates
-elif grep -qE 'trello\.sh (PUT|DELETE) /cards/.*/checkItem' "$TRANSCRIPT_PATH"; then
-  CARD_UPDATED=true
-elif grep -qE 'trello\.sh PUT /checkitems/' "$TRANSCRIPT_PATH"; then
+if grep -qE 'trello\.sh (POST|PUT|DELETE) /(cards|checkitems)' "$TRANSCRIPT_PATH"; then
   CARD_UPDATED=true
 fi
 
