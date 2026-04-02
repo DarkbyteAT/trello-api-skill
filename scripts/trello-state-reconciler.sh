@@ -28,8 +28,9 @@ fi
 # Patterns that indicate a Trello card was referenced
 CARD_REFERENCED=false
 
-# Single grep pass for all card reference patterns
-if grep -qE 'trello\.sh (GET|POST|PUT|DELETE) .*/cards|https://trello\.com/c/|/cards/[0-9a-f]{24}' "$TRANSCRIPT_PATH"; then
+# Only match actual trello.sh tool calls — not card URLs or IDs that may
+# appear in user messages or file contents read by Claude.
+if grep -qE 'trello\.sh (GET|POST|PUT|DELETE) .*/cards' "$TRANSCRIPT_PATH"; then
   CARD_REFERENCED=true
 fi
 
