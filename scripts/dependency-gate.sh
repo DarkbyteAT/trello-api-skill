@@ -7,8 +7,9 @@ set -euo pipefail
 # Read the hook payload from stdin
 payload="$(cat)"
 
-# Extract the prompt text (lowercase for case-insensitive matching)
-prompt="$(printf '%s' "$payload" | jq -r '.prompt // empty' | tr '[:upper:]' '[:lower:]')"
+# Extract the prompt text (lowercase for case-insensitive matching).
+# Use || true to prevent set -e crash on malformed input.
+prompt="$(printf '%s' "$payload" | jq -r '.prompt // empty' 2>/dev/null | tr '[:upper:]' '[:lower:]' || true)"
 
 if [[ -z "$prompt" ]]; then
   exit 0
@@ -21,10 +22,8 @@ target_pattern='(card|trello)'
 # Pattern 2: contains a Trello card short URL
 url_pattern='trello\.com/c/'
 
-if [[ "$prompt" =~ $action_pattern ]] && [[ "$prompt" =~ $target_pattern ]]; then
-  matched=true
-elif [[ "$prompt" =~ $url_pattern ]]; then
-  matched=true
+if [[ "$prompt" =~ $action_pattern && "$prompt" =~ $target_pattern ]] || [[ "$prompt" =~ $url_pattern ]]; then
+  : # Match found, proceed to injection
 else
   exit 0
 fi
