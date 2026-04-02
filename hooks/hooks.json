@@ -12,6 +12,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/trello-state-reconciler.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
