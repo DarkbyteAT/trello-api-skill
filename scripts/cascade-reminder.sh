@@ -29,13 +29,13 @@ if ! echo "$COMMAND" | grep -qE '(PUT|POST|DELETE)[[:space:]]'; then
   exit 0
 fi
 
-# Must target a card or card sub-resource
-if ! echo "$COMMAND" | grep -qE '/cards/[0-9a-f]{24}'; then
+# Must target a card or card sub-resource (case-insensitive for hex IDs)
+if ! echo "$COMMAND" | grep -iqE '/cards/[0-9a-f]{24}'; then
   exit 0
 fi
 
-# Extract the card ID from the command
-CARD_ID=$(echo "$COMMAND" | grep -oE '/cards/([0-9a-f]{24})' | grep -oE '[0-9a-f]{24}' | head -1)
+# Extract the card ID from the command (case-insensitive)
+CARD_ID=$(echo "$COMMAND" | grep -oiE '/cards/([0-9a-f]{24})' | grep -oiE '[0-9a-f]{24}' | head -1)
 
 if [[ -z "$CARD_ID" ]]; then
   exit 0
@@ -57,8 +57,8 @@ CASCADE CHECK: You just modified Trello card %CARD_ID%. Other cards may referenc
    - If this card was re-labelled, dependent cards may need label alignment
    - If checklist items were completed, dependent cards waiting on those items should be notified
 
-Use: trello.sh GET /search query="<card-short-url>" modelTypes=cards idBoards=<board-id>
-Or check attachments: trello.sh GET /cards/<dependent-card-id>/attachments
+Use: ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /search query="%CARD_ID%" modelTypes=cards idBoards=<board-id>
+Or check attachments: ${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /cards/<dependent-card-id>/attachments
 REMINDER
 
 MSG="${MSG//%CARD_ID%/$CARD_ID}"
