@@ -33,7 +33,7 @@ fi
 jq -n '{
   "hookSpecificOutput": {
     "hookEventName": "UserPromptSubmit",
-    "additionalContext": "DEPENDENCY CHECK REMINDER: Before starting work on this Trello card, check its dependencies. Use trello.sh to fetch the card details and verify: (1) All cards listed in the Dependencies section are in the Done column, (2) Any dependent PRs have been merged to main. If dependencies are not met, inform the user and suggest working on dependencies first or removing the dependency if it is no longer relevant."
+    "additionalContext": "DEPENDENCY CHECK: Before starting work on this card, verify its dependencies are in Done and any dependent PRs are merged to main."
   }
 }'
 
