@@ -9,11 +9,11 @@ INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 
 # Only act on trello.sh GET calls for cards
-if [[ "$COMMAND" != *"/scripts/trello.sh"* ]]; then
+if [[ "$COMMAND" != *"trello.sh"* ]]; then
   exit 0
 fi
-# Only match direct card fetches (GET /1/cards/{24-char-id}), not sub-resources
-if ! echo "$COMMAND" | grep -qE 'GET[[:space:]]+/cards/[0-9a-f]{24}([[:space:]]|$)'; then
+# Match direct card fetches — supports both 24-char hex IDs and 8-char shortLinks
+if ! echo "$COMMAND" | grep -qE 'GET[[:space:]]+/cards/[a-zA-Z0-9]{8,24}([[:space:]]|$)'; then
   exit 0
 fi
 
@@ -22,15 +22,21 @@ if [[ -z "$RESPONSE" ]]; then
   exit 0
 fi
 
-# Try to parse response as JSON — if it fails, it's not a card payload
-if ! echo "$RESPONSE" | jq -e '.id' >/dev/null 2>&1; then
+# Extract all fields in a single jq pass. If not a card object, bail.
+eval "$(echo "$RESPONSE" | jq -r '
+  if type == "object" and has("id") then
+    @sh "CARD_NAME=\(.name // "unknown")",
+    @sh "DESC=\((.desc // "") | ascii_downcase)",
+    @sh "LABELS=\([.labels[]?.name // empty] | join(", "))",
+    "IS_CARD=true"
+  else
+    "IS_CARD=false"
+  end
+' 2>/dev/null || echo "IS_CARD=false")"
+
+if [[ "$IS_CARD" != "true" ]]; then
   exit 0
 fi
-
-# Extract labels and description
-LABELS=$(echo "$RESPONSE" | jq -r '[.labels[]?.name // empty] | join(", ")' 2>/dev/null || echo "")
-DESC=$(echo "$RESPONSE" | jq -r '.desc // ""' 2>/dev/null | tr '[:upper:]' '[:lower:]')
-CARD_NAME=$(echo "$RESPONSE" | jq -r '.name // "unknown"' 2>/dev/null)
 
 AGENTS=()
 REASONS=()
