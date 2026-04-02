@@ -1,9 +1,11 @@
 {
   "name": "trello-api-skill",
-  "owner": { "name": "DarkbyteAT" },
+  "owner": {
+    "name": "DarkbyteAT"
+  },
   "metadata": {
     "description": "Trello REST API skill for Claude Code",
-    "version": "2.1.5",
+    "version": "2.2.0",
     "pluginRoot": "."
   },
   "plugins": [
