@@ -12,7 +12,8 @@ COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 if [[ "$COMMAND" != *"/scripts/trello.sh"* ]]; then
   exit 0
 fi
-if ! echo "$COMMAND" | grep -qE 'GET\s+/1/cards/'; then
+# Only match direct card fetches (GET /1/cards/{24-char-id}), not sub-resources
+if ! echo "$COMMAND" | grep -qE 'GET[[:space:]]+/1/cards/[0-9a-f]{24}([[:space:]]|$)'; then
   exit 0
 fi
 
