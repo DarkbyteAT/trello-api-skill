@@ -5,6 +5,10 @@ set -euo pipefail
 # Reads JSON from stdin (Claude Code PostToolUse format), checks if the
 # command invoked a Trello plugin script, inspects the response for HTTP
 # errors, and outputs actionable suggestions as additionalContext.
+#
+# NOTE: trello.sh writes "Error: HTTP {code}" and the response body to
+# both stdout and stderr on failures (via tee). Claude Code's Bash
+# tool_response captures this output, so these patterns should match.
 
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
@@ -62,6 +66,12 @@ fi
 # Invalid ID — common when card/board IDs are wrong or stale
 if echo "$RESPONSE_LOWER" | grep -qE '(invalid id|invalid objectid|invalid value for id)'; then
   suggest "Trello API reported an invalid ID. Verify the card, board, or object ID is correct. IDs are 24-character hex strings — check for typos or stale references."
+fi
+
+# Generic fallback: catch "Error: HTTP {code}" from trello.sh output
+if echo "$RESPONSE_LOWER" | grep -qE '^error: http [0-9]+'; then
+  code=$(echo "$RESPONSE" | grep -oE 'HTTP [0-9]+' | grep -oE '[0-9]+' | head -1)
+  suggest "Trello API returned an error (HTTP ${code:-unknown}). Check the error message above and retry. If the endpoint seems wrong, run: spec-manager.sh update-spec to refresh the cached OpenAPI spec."
 fi
 
 # No error detected
