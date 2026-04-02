@@ -13,7 +13,7 @@ if [[ "$COMMAND" != *"/scripts/trello.sh"* ]]; then
   exit 0
 fi
 # Only match direct card fetches (GET /1/cards/{24-char-id}), not sub-resources
-if ! echo "$COMMAND" | grep -qE 'GET[[:space:]]+/1/cards/[0-9a-f]{24}([[:space:]]|$)'; then
+if ! echo "$COMMAND" | grep -qE 'GET[[:space:]]+/cards/[0-9a-f]{24}([[:space:]]|$)'; then
   exit 0
 fi
 
@@ -52,7 +52,7 @@ if echo "$LABELS" | grep -qi "Critical"; then
 fi
 
 # Map description keywords to agents
-if echo "$DESC" | grep -qE '(auth|security|pii|token|password|credential|oauth|jwt|oidc|patient data|gdpr)'; then
+if echo "$DESC" | grep -qE '\b(auth|security|pii|token|password|credential|oauth|jwt|oidc|patient data|gdpr)\b'; then
   # Avoid duplicates
   if [[ ! " ${AGENTS[*]:-} " =~ " security-engineer " ]]; then
     AGENTS+=("security-engineer")
@@ -60,14 +60,14 @@ if echo "$DESC" | grep -qE '(auth|security|pii|token|password|credential|oauth|j
   fi
 fi
 
-if echo "$DESC" | grep -qE '(frontend|ui |component|react|vue|svelte|css|tailwind|jsx|tsx)'; then
+if echo "$DESC" | grep -qE '\b(frontend|ui|component|react|vue|svelte|css|tailwind|jsx|tsx)\b'; then
   if [[ ! " ${AGENTS[*]:-} " =~ " frontend-developer " ]]; then
     AGENTS+=("frontend-developer")
     REASONS+=("frontend-developer (frontend keywords in description)")
   fi
 fi
 
-if echo "$DESC" | grep -qE '(api|endpoint|database|migration|schema|model|sql|postgres|redis)'; then
+if echo "$DESC" | grep -qE '\b(api|endpoint|database|migration|schema|model|sql|postgres|redis)\b'; then
   if [[ ! " ${AGENTS[*]:-} " =~ " backend-developer " ]]; then
     AGENTS+=("backend-developer")
     REASONS+=("backend-developer (backend/data keywords in description)")
