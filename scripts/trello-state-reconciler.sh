@@ -22,16 +22,17 @@ if [[ -z "$TRANSCRIPT_PATH" || ! -f "$TRANSCRIPT_PATH" ]]; then
   exit 0
 fi
 
-TRANSCRIPT=$(cat "$TRANSCRIPT_PATH")
+# Grep the file directly instead of buffering into a variable — avoids
+# memory issues and slow piping for large transcripts.
 
 # Patterns that indicate a Trello card was referenced
 CARD_REFERENCED=false
 
-if echo "$TRANSCRIPT" | grep -qE 'trello\.sh (GET|POST|PUT|DELETE) /1/cards/'; then
+if grep -qE 'trello\.sh (GET|POST|PUT|DELETE) /1/cards/' "$TRANSCRIPT_PATH"; then
   CARD_REFERENCED=true
-elif echo "$TRANSCRIPT" | grep -qE 'https://trello\.com/c/'; then
+elif grep -qE 'https://trello\.com/c/' "$TRANSCRIPT_PATH"; then
   CARD_REFERENCED=true
-elif echo "$TRANSCRIPT" | grep -qE '/cards/[0-9a-f]{24}'; then
+elif grep -qE '/cards/[0-9a-f]{24}' "$TRANSCRIPT_PATH"; then
   CARD_REFERENCED=true
 fi
 
@@ -40,26 +41,26 @@ if [[ "$CARD_REFERENCED" != "true" ]]; then
   exit 0
 fi
 
-# Patterns that indicate board state was actually updated
+# Patterns that indicate board state was actually updated.
+# Consolidated to avoid redundant/overlapping patterns.
 CARD_UPDATED=false
 
-if echo "$TRANSCRIPT" | grep -qE 'trello\.sh PUT /1/cards/[^ ]*/idList'; then
+# Card moves via query params: trello.sh PUT /1/cards/{id} idList={listId}
+if grep -qE 'trello\.sh PUT /1/cards/[0-9a-f]{24}.*idList=' "$TRANSCRIPT_PATH"; then
   CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh PUT /1/cards/[^ ]*(/| )idList'; then
+# General card PUT (catches any update to a card)
+elif grep -qE 'trello\.sh PUT /1/cards/[0-9a-f]{24}' "$TRANSCRIPT_PATH"; then
   CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh (PUT|POST) /1/cards/[^ ]*/idLabels'; then
+# Label changes
+elif grep -qE 'trello\.sh (PUT|POST) /1/cards/.*/idLabels' "$TRANSCRIPT_PATH"; then
   CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh (PUT|POST) /1/cards/[^ ]*/checklist'; then
+# Comments
+elif grep -qE 'trello\.sh POST /1/cards/.*/actions/comments' "$TRANSCRIPT_PATH"; then
   CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh PUT /1/cards/[0-9a-f]{24} '; then
+# Checklist item updates
+elif grep -qE 'trello\.sh (PUT|DELETE) /1/cards/.*/checkItem' "$TRANSCRIPT_PATH"; then
   CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh POST /1/cards/[^ ]*/actions/comments'; then
-  CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh (PUT|DELETE) /1/cards/[^ ]*/checkItem'; then
-  CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh PUT /1/cards/[0-9a-f]{24}$'; then
-  CARD_UPDATED=true
-elif echo "$TRANSCRIPT" | grep -qE 'trello\.sh PUT /1/checkitems/'; then
+elif grep -qE 'trello\.sh PUT /1/checkitems/' "$TRANSCRIPT_PATH"; then
   CARD_UPDATED=true
 fi
 
