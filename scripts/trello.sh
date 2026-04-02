@@ -91,9 +91,12 @@ HTTP_CODE=$(curl "${CURL_ARGS[@]}" "$URL")
 
 if [[ "$HTTP_CODE" -ge 400 ]]; then
   # Output errors to both stdout (for Claude Code tool_response / PostToolUse
-  # hooks) and stderr (for terminal display).
-  echo "Error: HTTP ${HTTP_CODE}" | tee /dev/stderr
-  { jq . "$TMPFILE" 2>/dev/null || cat "$TMPFILE"; } | tee /dev/stderr
+  # hooks) and stderr (for terminal display). Grouped into single block to
+  # prevent output interleaving.
+  {
+    echo "Error: HTTP ${HTTP_CODE}"
+    jq . "$TMPFILE" 2>/dev/null || cat "$TMPFILE"
+  } | tee /dev/stderr
   exit 1
 fi
 
