@@ -160,6 +160,30 @@ ${CLAUDE_PLUGIN_ROOT}/scripts/spec-manager.sh status
 
 For examples of common operations (boards, cards, lists, labels, search, webhooks), see [REFERENCE.md](REFERENCE.md).
 
+## Card Dependencies & Cascading Changes
+
+When updating a Trello card, consider cross-correlated cards that may need cascading changes. The plugin's PostToolUse cascade-reminder hook will remind you, but here's how to check proactively:
+
+**Dependencies are tracked in two ways:**
+1. **`## Dependencies` section** in card descriptions — lists cards this one depends on (by URL, short link, or name)
+2. **Card attachments** — links to other Trello cards create concrete, queryable relationships
+
+**Checking for dependent cards after a mutation:**
+
+```bash
+# Find cards that link to this card via attachments
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /search query="<card-short-url>" modelTypes=cards idBoards=<board-id>
+
+# Check a specific card's attachments for linked cards
+${CLAUDE_PLUGIN_ROOT}/scripts/trello.sh GET /cards/<card-id>/attachments
+```
+
+**When to cascade:**
+- Card moved to Done → dependent cards may now be unblocked (Todo → Doing)
+- Card scope changed → dependent cards may need description updates
+- Card re-labelled → dependent cards may need label alignment
+- Checklist items completed → cards waiting on those items should be notified
+
 ## Common Mistakes
 
 | Mistake | Fix |
