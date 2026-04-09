@@ -22,15 +22,33 @@ if [[ -z "$TRANSCRIPT_PATH" || ! -f "$TRANSCRIPT_PATH" ]]; then
   exit 0
 fi
 
-# Grep the file directly instead of buffering into a variable — avoids
-# memory issues and slow piping for large transcripts.
+# Extract only real Bash tool invocations from the transcript.
+#
+# Grepping the raw JSONL text is unsafe: each record is a single (very long)
+# line, so a greedy regex like `trello\.sh ... .*/cards` will happily span
+# thousands of characters and correlate two unrelated strings that share a
+# record — e.g. a `trello.sh GET /boards` example in one skill's description
+# and the literal `/cards` in an unrelated skill's description loaded in the
+# same turn. That produced false-positive blocks on sessions that never
+# touched Trello at all.
+#
+# Only assistant Bash tool_use events can actually execute trello.sh, so we
+# pull out just those command strings and match against them.
+BASH_COMMANDS=$(jq -r '
+  select(.type == "assistant")
+  | .message.content[]?
+  | select(.type == "tool_use" and .name == "Bash")
+  | .input.command // empty
+' "$TRANSCRIPT_PATH" 2>/dev/null || true)
 
-# Patterns that indicate a Trello card was referenced
+if [[ -z "$BASH_COMMANDS" ]]; then
+  exit 0
+fi
+
+# Patterns that indicate a Trello card was referenced.
+# The path token is whitespace-free so it can't bridge unrelated fragments.
 CARD_REFERENCED=false
-
-# Only match actual trello.sh tool calls — not card URLs or IDs that may
-# appear in user messages or file contents read by Claude.
-if grep -qE 'trello\.sh (GET|POST|PUT|DELETE) .*/cards' "$TRANSCRIPT_PATH"; then
+if grep -qE 'trello\.sh (GET|POST|PUT|DELETE) [^[:space:]]*/cards' <<<"$BASH_COMMANDS"; then
   CARD_REFERENCED=true
 fi
 
@@ -39,10 +57,16 @@ if [[ "$CARD_REFERENCED" != "true" ]]; then
   exit 0
 fi
 
-# Any POST, PUT, or DELETE targeting cards or checkitems counts as an update.
-# Single grep pass covers creation, mutation, deletion, and sub-resources.
+# Any non-GET trello.sh call counts as board-state reconciliation. HTTP GET
+# is read-only by definition, so anything else — POST, PUT, DELETE, PATCH —
+# means the session wrote *something* to Trello. This matches the semantics
+# of the check (did you reconcile board state?) and avoids an allowlist of
+# paths that drifts out of date every time Trello adds a sub-resource. The
+# previous allowlist notably missed POST /checklists/{id}/checkItems, which
+# is how checklist items are actually added and accounted for ~75% of real
+# reconciliation writes.
 CARD_UPDATED=false
-if grep -qE 'trello\.sh (POST|PUT|DELETE) /(cards|checkitems)' "$TRANSCRIPT_PATH"; then
+if grep -qE 'trello\.sh (POST|PUT|DELETE|PATCH)\b' <<<"$BASH_COMMANDS"; then
   CARD_UPDATED=true
 fi
 

@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "Trello REST API skill for Claude Code",
-    "version": "2.2.1",
+    "version": "2.2.2",
     "pluginRoot": "."
   },
   "plugins": [
