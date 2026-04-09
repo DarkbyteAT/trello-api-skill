@@ -5,19 +5,14 @@
   },
   "metadata": {
     "description": "Trello REST API skill for Claude Code",
-    "version": "2.2.2",
+    "version": "3.0.0",
     "pluginRoot": "."
   },
   "plugins": [
     {
       "name": "trello-api",
       "source": "./",
-      "description": "Invoke any Trello REST API endpoint with auto-approved wrapper scripts, powered by the official OpenAPI spec with jq-based lookup"
-    },
-    {
-      "name": "executing-trello-waves",
-      "source": "./",
-      "description": "Orchestrate parallel execution of Trello implementation cards using git worktrees and subagents — identifies ready cards, analyses file conflicts, dispatches agents, reviews output, ships PRs, and manages the full Trello card lifecycle"
+      "description": "Invoke any Trello REST API endpoint with auto-approved wrapper scripts, plus executing-trello-waves for parallel card orchestration"
     }
   ]
 }
