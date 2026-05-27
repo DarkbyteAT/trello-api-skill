@@ -180,8 +180,8 @@ git branch -d feat/<short-name>
 |------|-----|
 | Cards define PR scope — implement everything in the Definition of Done | One card = one PR, no partial implementations |
 | Never move a card to Done yourself — that happens after merge | Reviewing and Done are separate columns |
-| Never alias the `trello.sh` path to a variable | Breaks the auto-approve hook |
-| No comments before `trello.sh` in bash commands | Also breaks auto-approval |
+| Never alias the `trello.py` path to a variable | Breaks the auto-approve hook |
+| No comments before `trello.py` in bash commands | Also breaks auto-approval |
 | Architecture rules come from repo docs — follow them, don't reinvent | `AGENTS.md` and `docs/` are authoritative |
 | Keep Trello updated promptly | Move cards between columns and tick checklist items as work progresses |
 | When ready cards share files, don't parallelise them | Split the wave or execute conflicting cards sequentially |
