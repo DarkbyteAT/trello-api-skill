@@ -88,15 +88,26 @@ def main() -> None:
             return
 
         plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
-        resolved_prefix = f"{plugin_root}/scripts/" if plugin_root else None
 
-        matched = False
-        if resolved_prefix and command.startswith(resolved_prefix):
-            matched = True
-        elif command.startswith(LITERAL_PREFIX):
-            matched = True
+        # Defence-in-depth: if CLAUDE_PLUGIN_ROOT is missing, refuse to
+        # auto-approve. Production Claude Code always sets it; treating an
+        # unset value as "match anything literal" would be permissive in
+        # test/dev environments where the variable is absent.
+        if not plugin_root:
+            return
 
-        if not matched:
+        # Normalise path separators so a Windows CLAUDE_PLUGIN_ROOT (which
+        # uses backslashes) matches commands written with either separator.
+        # Only used for the prefix check — the rest of the validation runs
+        # against the ORIGINAL command so backslashes inside quoted card
+        # descriptions are not tampered with.
+        norm_command = command.replace("\\", "/")
+        norm_resolved = f"{plugin_root}/scripts/".replace("\\", "/")
+
+        if not (
+            norm_command.startswith(norm_resolved)
+            or norm_command.startswith(LITERAL_PREFIX)
+        ):
             return
 
         unquoted = strip_quoted(command)

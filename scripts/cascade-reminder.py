@@ -55,8 +55,13 @@ def main() -> None:
         if not command:
             return
 
+        # Normalise path separators so Windows commands (backslash) still
+        # match the substring check. Method/path regexes run against the
+        # original command — they don't care about separators.
+        norm_command = command.replace("\\", "/")
+
         # Only act on trello.py mutation commands targeting cards
-        if "scripts/trello.py" not in command:
+        if "scripts/trello.py" not in norm_command:
             return
 
         if not MUTATION_RE.search(command):
