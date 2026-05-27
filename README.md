@@ -22,7 +22,13 @@ This plugin ships two skills:
 
 ### Windows
 
-The plugin works on Windows (PowerShell, Command Prompt, or Windows Terminal) as long as `python` is on `PATH`. Install Python from [python.org](https://www.python.org/downloads/) or the Microsoft Store and tick the "Add Python to PATH" option during setup. `curl` ships with Windows 10+; `jq` is available via `winget install jqlang.jq` or `choco install jq`.
+The plugin works on Windows (PowerShell, Command Prompt, or Windows Terminal) as long as:
+
+1. `python` is on `PATH` — install from [python.org](https://www.python.org/downloads/) with the "Add Python to PATH" option ticked, or via the Microsoft Store. (`py -3` works as a fallback if `python` is not aliased.)
+2. `.PY` is in `PATHEXT` (the default when you tick "Add Python to PATH" during install). This is what lets the plugin invoke `${CLAUDE_PLUGIN_ROOT}/scripts/trello.py` directly.
+3. `curl` ships with Windows 10+. `jq` is available via `winget install jqlang.jq` or `choco install jq`.
+
+If auto-approval misbehaves for any reason on your setup, the plugin still works — Claude Code will just prompt for permission on each call instead of approving silently.
 
 ```bash
 export TRELLO_API_KEY="your-api-key"
@@ -160,15 +166,15 @@ An automated test harness — particularly for the hook's security checks — wo
 
 ### Versioning and Releases
 
-This plugin uses semantic versioning with git tags (`v2.1.5`, `v2.2.0`, etc.). When merging changes:
+This plugin uses semantic versioning with git tags (`v<major>.<minor>.<patch>`). When merging changes:
 
 1. **Bump the version tag** — patch for bug fixes, minor for new features/skills, major for breaking changes
 2. **Create a GitHub release** from the new tag with a changelog summary
 
 ```bash
-git tag v2.x.x
-git push origin v2.x.x
-gh release create v2.x.x --title "v2.x.x" --notes "changelog here"
+git tag v<major>.<minor>.<patch>
+git push origin v<major>.<minor>.<patch>
+gh release create v<major>.<minor>.<patch> --title "v<major>.<minor>.<patch>" --notes "changelog here"
 ```
 
 ### Submitting Changes
