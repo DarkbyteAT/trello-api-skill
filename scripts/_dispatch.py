@@ -11,6 +11,7 @@ Not intended for direct user invocation.
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 
 
@@ -35,7 +36,12 @@ def main() -> None:
     except OSError:
         pass  # best-effort cleanup
 
-    os.execv(sys.executable, [sys.executable, script_path] + args)
+    # subprocess.call (not os.execv) — execv on Windows spawns a new
+    # process and exits the current one asynchronously, which breaks
+    # the synchronous-call contract launch.cmd expects. subprocess.call
+    # is synchronous on both POSIX and Windows and propagates the
+    # child's exit code.
+    sys.exit(subprocess.call([sys.executable, script_path] + args))
 
 
 if __name__ == "__main__":
