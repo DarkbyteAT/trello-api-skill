@@ -21,11 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" approve-trello"
-          },
-          {
-            "type": "command",
-            "command": "cmd /c \"\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" approve-trello\""
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" approve-trello"
           }
         ]
       }
