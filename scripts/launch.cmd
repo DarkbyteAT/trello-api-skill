@@ -96,12 +96,30 @@ exit 127
 @goto :write_loop
 
 :write_done
-@where py       >nul 2>nul && py -3   "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%" & exit /b %errorlevel%
-@where python   >nul 2>nul && python  "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%" & exit /b %errorlevel%
-@where python3  >nul 2>nul && python3 "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%" & exit /b %errorlevel%
+@rem Dispatch through goto labels so `%errorlevel%` expands on its own
+@rem line AFTER the interpreter exits. The previous inline-`&` form
+@rem captured the errorlevel of the preceding `@where` check (always 0)
+@rem because cmd parses the whole line before executing it. _dispatch.py
+@rem cleans up ARGSFILE itself; the no-interpreter branch still needs
+@rem an explicit @del since it never reaches _dispatch.py.
+@where py       >nul 2>nul && goto :run_py_slow
+@where python   >nul 2>nul && goto :run_python_slow
+@where python3  >nul 2>nul && goto :run_python3_slow
 @del "%ARGSFILE%"
 @echo launch: no python interpreter found on PATH 1>&2
 @exit /b 127
+
+:run_py_slow
+@py -3   "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%"
+@exit /b %errorlevel%
+
+:run_python_slow
+@python  "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%"
+@exit /b %errorlevel%
+
+:run_python3_slow
+@python3 "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%"
+@exit /b %errorlevel%
 
 :write_one
 @rem Append one arg as a line in ARGSFILE. DisableDelayedExpansion
