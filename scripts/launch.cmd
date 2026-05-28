@@ -90,11 +90,16 @@ exit 127
 @set "ARGSFILE=%TEMP%\trello-launch-%RANDOM%-%RANDOM%.args"
 @type nul > "%ARGSFILE%"
 :write_loop
-@rem End-of-args check: `%~1` strips outer quotes, so an empty quoted
-@rem arg ("") gives `%~1=""` AND `%1=""` (the literal quoted-empty
-@rem form). A real end-of-args has both expansions empty. Requiring
-@rem BOTH to be empty distinguishes the two cases.
-@if "%~1"=="" if "%1"=="" goto :write_done
+@rem End-of-args check via `if defined`. A direct `if "%1"==""` form
+@rem crashes when an arg contains an unbalanced literal quote (e.g.
+@rem `name=hello"world`) because the bare %1 substitution drops the
+@rem orphaned `"` into the if-expression. Assigning %1 to TEST_ARG
+@rem under outer quotes protects against operator parsing, and
+@rem `if defined` distinguishes "end of args" (var stays unset) from
+@rem any non-empty value (var defined) — including empty-quoted "".
+@set "TEST_ARG="
+@set "TEST_ARG=%1"
+@if not defined TEST_ARG goto :write_done
 @rem Inline the writer (was :write_one) — DisableDelayedExpansion
 @rem during the set so a literal ! in the arg survives; then
 @rem EnableDelayedExpansion only for the echo so & | ^ < > inside the
@@ -139,9 +144,10 @@ exit 127
 :has_more_than_nine
 @rem Returns errorlevel 1 if more than 9 args were passed. Subroutines
 @rem have their own positional-parameter scope so shifting here does
-@rem not disturb the caller's %1..%9. The dual `%~1` / `%1` check
-@rem mirrors :write_loop — needed so an empty quoted 10th arg ("")
-@rem still trips the >9 detection.
+@rem not disturb the caller's %1..%9. Uses the same `if defined`
+@rem pattern as :write_loop so a 10th arg containing an unbalanced
+@rem quote doesn't crash the test, and an empty-quoted 10th arg ("")
+@rem still trips detection.
 @shift
 @shift
 @shift
@@ -151,7 +157,8 @@ exit 127
 @shift
 @shift
 @shift
-@if not "%~1"=="" exit /b 1
-@if not "%1"=="" exit /b 1
+@set "TEST_ARG="
+@set "TEST_ARG=%1"
+@if defined TEST_ARG exit /b 1
 @exit /b 0
 CMD_END
