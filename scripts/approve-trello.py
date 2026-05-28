@@ -68,6 +68,19 @@ def _matches_resolved(token: str, prefix: str) -> bool:
     return token.startswith(prefix)
 
 
+def _is_allowed_script(name: str) -> bool:
+    """ALLOWED_SCRIPTS membership check, case-insensitive on Windows.
+
+    On NTFS `Trello.py` and `trello.py` resolve to the same file, so
+    rejecting one but accepting the other would be a footgun. POSIX
+    filesystems treat them as distinct files, so the check stays
+    case-sensitive there.
+    """
+    if sys.platform == "win32":
+        return name.lower() in ALLOWED_SCRIPTS
+    return name in ALLOWED_SCRIPTS
+
+
 def strip_quoted(command: str) -> str:
     """Strip double-quoted strings first, then single-quoted strings.
 
@@ -177,9 +190,9 @@ def main() -> None:
                 second_token if second_token.endswith(".py")
                 else f"{second_token}.py"
             )
-            if target_script not in ALLOWED_SCRIPTS:
+            if not _is_allowed_script(target_script):
                 return
-        elif basename not in ALLOWED_SCRIPTS:
+        elif not _is_allowed_script(basename):
             return
 
         unquoted = strip_quoted(command)
