@@ -16,9 +16,13 @@ from pathlib import Path
 
 
 CARD_REFERENCE_RE = re.compile(
-    r"\btrello(?:\.py)? (?:GET|POST|PUT|DELETE) \S*/cards"
+    r"\btrello(?:\.py)? (?:GET|POST|PUT|DELETE) \S*/cards",
+    re.IGNORECASE,
 )
-MUTATION_RE = re.compile(r"\btrello(?:\.py)? (?:POST|PUT|DELETE|PATCH)\b")
+MUTATION_RE = re.compile(
+    r"\btrello(?:\.py)? (?:POST|PUT|DELETE|PATCH)\b",
+    re.IGNORECASE,
+)
 
 
 BLOCK_JSON = (
