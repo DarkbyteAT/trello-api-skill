@@ -50,21 +50,87 @@ exit 127
 @shift
 @set "SCRIPT=%~dp0%TARGET%.py"
 
-@where py       >nul 2>nul && goto :run_py
-@where python   >nul 2>nul && goto :run_python
-@where python3  >nul 2>nul && goto :run_python3
+@rem Fast path (0..9 forwarded args): pass positionally as %1..%9 so
+@rem each arg preserves the user's original quoting verbatim. Both shell
+@rem operators (&, |, ^, <, >) and exclamation marks survive because the
+@rem args are never stored in a cmd variable (which would trigger a
+@rem second expansion pass that mangles one set or the other).
+@rem
+@rem Slow path (10+ forwarded args): cmd has a hard %1..%9 positional
+@rem limit, so we write each arg to a temp file (one per line, with
+@rem setlocal toggling to keep ! and & safe), then re-exec the target
+@rem via _dispatch.py which reads the file and calls os.execv.
+@rem
+@rem The slow path is unreachable for any realistic Trello call (peak
+@rem ~7 args) — it exists so we never silently truncate.
+
+@call :has_more_than_nine %*
+@if errorlevel 1 goto :slow_path
+
+:fast_path
+@where py       >nul 2>nul && goto :run_py_fast
+@where python   >nul 2>nul && goto :run_python_fast
+@where python3  >nul 2>nul && goto :run_python3_fast
 @echo launch: no python interpreter found on PATH 1>&2
 @exit /b 127
 
-:run_py
+:run_py_fast
 @py -3   "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 @exit /b %errorlevel%
 
-:run_python
+:run_python_fast
 @python  "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 @exit /b %errorlevel%
 
-:run_python3
+:run_python3_fast
 @python3 "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
 @exit /b %errorlevel%
+
+:slow_path
+@set "ARGSFILE=%TEMP%\trello-launch-%RANDOM%-%RANDOM%.args"
+@type nul > "%ARGSFILE%"
+:write_loop
+@if "%~1"=="" goto :write_done
+@call :write_one "%~1"
+@shift
+@goto :write_loop
+
+:write_done
+@where py       >nul 2>nul && py -3   "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%" & exit /b %errorlevel%
+@where python   >nul 2>nul && python  "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%" & exit /b %errorlevel%
+@where python3  >nul 2>nul && python3 "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%" & exit /b %errorlevel%
+@del "%ARGSFILE%"
+@echo launch: no python interpreter found on PATH 1>&2
+@exit /b 127
+
+:write_one
+@rem Append one arg as a line in ARGSFILE. DisableDelayedExpansion
+@rem during the set so a literal ! in the arg survives; then
+@rem EnableDelayedExpansion only for the echo so & | ^ < > inside the
+@rem variable value aren't interpreted as cmd operators. `echo(` (open
+@rem paren, no space) is the cmd idiom for echoing strings that may
+@rem start with reserved tokens.
+@setlocal DisableDelayedExpansion
+@set "ARG=%~1"
+@setlocal EnableDelayedExpansion
+@(echo(!ARG!) >> "%ARGSFILE%"
+@endlocal
+@endlocal
+@goto :eof
+
+:has_more_than_nine
+@rem Returns errorlevel 1 if more than 9 args were passed. Subroutines
+@rem have their own positional-parameter scope so shifting here does
+@rem not disturb the caller's %1..%9.
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@if not "%~1"=="" exit /b 1
+@exit /b 0
 CMD_END
