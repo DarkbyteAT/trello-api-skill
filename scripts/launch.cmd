@@ -1,0 +1,53 @@
+:<<"BATCH_END"
+@echo off
+goto :BATCH_MAIN
+BATCH_END
+
+# ============================================================
+# POSIX shell side (when invoked via `sh launch.cmd <target>`)
+# `:<<"BATCH_END" ... BATCH_END` is consumed by `:` (the null command)
+# as a heredoc and discarded. The shell then runs the code below.
+# ============================================================
+target="${1:?launch: missing target script name}"
+shift
+script_dir="$(cd -- "$(dirname -- "$0")" && pwd)"
+script_path="$script_dir/$target.py"
+
+for py in python3 python; do
+    if command -v "$py" >/dev/null 2>&1; then
+        exec "$py" "$script_path" "$@"
+    fi
+done
+
+printf 'launch: no python3 interpreter found on PATH\n' >&2
+exit 127
+
+# ============================================================
+# cmd.exe side (when invoked as `launch.cmd <target>` on Windows)
+# cmd parses the first line as a label (its weird name is ignored
+# because nothing ever `goto`s it), then runs `@echo off` and
+# jumps to :BATCH_MAIN below.
+# ============================================================
+:BATCH_MAIN
+@setlocal EnableDelayedExpansion
+@set "TARGET=%~1"
+@if "%TARGET%"=="" (
+    @echo launch: missing target script name 1>&2
+    @exit /b 2
+)
+@shift
+@set "SCRIPT=%~dp0%TARGET%.py"
+
+@set "ARGS="
+:GATHER
+@if "%~1"=="" goto :DISPATCH
+@set ARGS=!ARGS! "%~1"
+@shift
+@goto :GATHER
+
+:DISPATCH
+@where py       >nul 2>nul && ( py -3   "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
+@where python   >nul 2>nul && ( python  "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
+@where python3  >nul 2>nul && ( python3 "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
+@echo launch: no python interpreter found on PATH 1>&2
+@exit /b 127
