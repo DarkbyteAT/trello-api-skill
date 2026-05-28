@@ -58,9 +58,9 @@ exit 127
 @goto :GATHER
 
 :DISPATCH
-@where py       >nul 2>nul && ( py -3   "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
-@where python   >nul 2>nul && ( python  "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
-@where python3  >nul 2>nul && ( python3 "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
+@where py       >nul 2>nul && ( py -3   "%SCRIPT%" !ARGS! & exit /b !errorlevel! )
+@where python   >nul 2>nul && ( python  "%SCRIPT%" !ARGS! & exit /b !errorlevel! )
+@where python3  >nul 2>nul && ( python3 "%SCRIPT%" !ARGS! & exit /b !errorlevel! )
 @echo launch: no python interpreter found on PATH 1>&2
 @exit /b 127
 CMD_END
