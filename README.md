@@ -22,13 +22,15 @@ This plugin ships two skills:
 
 ### Windows
 
-The plugin works on Windows (PowerShell, Command Prompt, or Windows Terminal) as long as:
+The plugin works on a fresh Windows install as long as ONE of these is on `PATH`:
 
-1. `python` is on `PATH` — install from [python.org](https://www.python.org/downloads/) with the "Add Python to PATH" option ticked, or via the Microsoft Store. (`py -3` works as a fallback if `python` is not aliased.)
-2. `.PY` is in `PATHEXT` (the default when you tick "Add Python to PATH" during install). This is what lets the plugin invoke `${CLAUDE_PLUGIN_ROOT}/scripts/trello.py` directly.
-3. `curl` ships with Windows 10+. `jq` is available via `winget install jqlang.jq` or `choco install jq`.
+- `py` (the Python Launcher — installed by default with the python.org installer or the Microsoft Store)
+- `python` (added by the python.org installer when "Add Python to PATH" is ticked)
+- `python3` (rare on Windows but supported)
 
-If auto-approval misbehaves for any reason on your setup, the plugin still works — Claude Code will just prompt for permission on each call instead of approving silently.
+`curl` ships with Windows 10+; `jq` is available via `winget install jqlang.jq` or `choco install jq`.
+
+A bundled polyglot launcher (`scripts/launch.cmd`) handles interpreter discovery itself, so you don't need to configure `PATHEXT` or alias `python` to `python3`.
 
 ```bash
 export TRELLO_API_KEY="your-api-key"
