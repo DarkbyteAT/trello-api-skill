@@ -4,11 +4,16 @@ goto :BATCH_MAIN
 BATCH_END
 
 # ============================================================
-# POSIX shell side (when invoked via `sh launch.cmd <target>`)
-# `:<<"BATCH_END" ... BATCH_END` is consumed by `:` (the null command)
-# as a heredoc and discarded. The shell then runs the code below.
+# POSIX shell side (when invoked via `sh launch.cmd <target>` or via
+# the kernel/sh ENOEXEC fallback). The `:<<"BATCH_END" ... BATCH_END`
+# block above is consumed by `:` (the null command) as a heredoc and
+# discarded. The shell then runs the code below.
 # ============================================================
-target="${1:?launch: missing target script name}"
+if [ -z "${1:-}" ]; then
+    printf 'launch: missing target script name\n' >&2
+    exit 2
+fi
+target="$1"
 shift
 script_dir="$(cd -- "$(dirname -- "$0")" && pwd)"
 script_path="$script_dir/$target.py"
@@ -23,11 +28,18 @@ printf 'launch: no python3 interpreter found on PATH\n' >&2
 exit 127
 
 # ============================================================
-# cmd.exe side (when invoked as `launch.cmd <target>` on Windows)
+# cmd.exe side (when invoked as `launch.cmd <target>` on Windows).
 # cmd parses the first line as a label (its weird name is ignored
-# because nothing ever `goto`s it), then runs `@echo off` and
-# jumps to :BATCH_MAIN below.
+# because nothing ever `goto`s it), then runs `@echo off` and jumps
+# to :BATCH_MAIN below.
+#
+# The whole batch block is also wrapped in a `:<<"CMD_END" ... CMD_END`
+# heredoc so that `sh -n launch.cmd` parses cleanly. The sh side never
+# reaches this block at runtime (the `exec` above replaces the shell
+# process), but the syntactically-invalid-for-sh batch grammar would
+# otherwise trip up linters.
 # ============================================================
+:<<"CMD_END"
 :BATCH_MAIN
 @setlocal EnableDelayedExpansion
 @set "TARGET=%~1"
@@ -51,3 +63,4 @@ exit 127
 @where python3  >nul 2>nul && ( python3 "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
 @echo launch: no python interpreter found on PATH 1>&2
 @exit /b 127
+CMD_END
