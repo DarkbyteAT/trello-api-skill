@@ -109,17 +109,23 @@ def main() -> None:
         norm_command = command.replace("\\", "/")
         norm_resolved = f"{plugin_root}/scripts/".replace("\\", "/")
 
+        # Strip surrounding quotes from the first token. On Windows
+        # installs where CLAUDE_PLUGIN_ROOT contains spaces (e.g.
+        # `C:\Users\User Name\...`), Claude emits the script path
+        # quoted; without this, the prefix and basename checks fail.
+        first_token = norm_command.split(maxsplit=1)[0] if norm_command else ""
+        clean_first_token = first_token.strip("\"'")
+
         if not (
-            norm_command.startswith(norm_resolved)
-            or norm_command.startswith(LITERAL_PREFIX)
+            clean_first_token.startswith(norm_resolved)
+            or clean_first_token.startswith(LITERAL_PREFIX)
         ):
             return
 
         # Basename allow-list: enforce that the targeted script is one
         # we actually intend to auto-approve. Use the normalised form so
         # both separator styles work.
-        first_token = norm_command.split(maxsplit=1)[0]
-        basename = first_token.rsplit("/", 1)[-1]
+        basename = clean_first_token.rsplit("/", 1)[-1]
         if basename not in ALLOWED_SCRIPTS:
             return
 
