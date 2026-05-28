@@ -79,6 +79,8 @@ def main() -> None:
 
     method = sys.argv[1].upper()
     api_path = sys.argv[2]
+    if not api_path.startswith("/"):
+        api_path = f"/{api_path}"
     params = sys.argv[3:]
 
     query_params: list[tuple[str, str]] = []
@@ -115,12 +117,16 @@ def main() -> None:
             curl_args.extend(["-F", fparam])
         curl_args.append(url)
 
-        result = subprocess.run(
-            curl_args,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                curl_args,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except FileNotFoundError:
+            err("Error: 'curl' is required but not installed or not in PATH.")
+            sys.exit(1)
 
         if result.returncode != 0:
             err(f"Error: curl failed (exit {result.returncode})")
