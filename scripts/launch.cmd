@@ -41,7 +41,7 @@ exit 127
 # ============================================================
 :<<"CMD_END"
 :BATCH_MAIN
-@setlocal EnableDelayedExpansion
+@setlocal
 @set "TARGET=%~1"
 @if "%TARGET%"=="" (
     @echo launch: missing target script name 1>&2
@@ -50,17 +50,115 @@ exit 127
 @shift
 @set "SCRIPT=%~dp0%TARGET%.py"
 
-@set "ARGS="
-:GATHER
-@if "%~1"=="" goto :DISPATCH
-@set ARGS=!ARGS! "%~1"
-@shift
-@goto :GATHER
+@rem Fast path (0..9 forwarded args): pass positionally as %1..%9 so
+@rem each arg preserves the user's original quoting verbatim. Both shell
+@rem operators (&, |, ^, <, >) and exclamation marks survive because the
+@rem args are never stored in a cmd variable (which would trigger a
+@rem second expansion pass that mangles one set or the other).
+@rem
+@rem Slow path (10+ forwarded args): cmd has a hard %1..%9 positional
+@rem limit, so we write each arg to a temp file (one per line, with
+@rem setlocal toggling to keep ! and & safe), then re-exec the target
+@rem via _dispatch.py which reads the file and calls os.execv.
+@rem
+@rem The slow path is unreachable for any realistic Trello call (peak
+@rem ~7 args) — it exists so we never silently truncate.
 
-:DISPATCH
-@where py       >nul 2>nul && ( py -3   "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
-@where python   >nul 2>nul && ( python  "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
-@where python3  >nul 2>nul && ( python3 "%SCRIPT%" %ARGS% & exit /b !errorlevel! )
+@call :has_more_than_nine %*
+@if errorlevel 1 goto :slow_path
+
+:fast_path
+@where py       >nul 2>nul && goto :run_py_fast
+@where python   >nul 2>nul && goto :run_python_fast
+@where python3  >nul 2>nul && goto :run_python3_fast
 @echo launch: no python interpreter found on PATH 1>&2
 @exit /b 127
+
+:run_py_fast
+@py -3   "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+@exit /b %errorlevel%
+
+:run_python_fast
+@python  "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+@exit /b %errorlevel%
+
+:run_python3_fast
+@python3 "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+@exit /b %errorlevel%
+
+:slow_path
+@set "ARGSFILE=%TEMP%\trello-launch-%RANDOM%-%RANDOM%.args"
+@type nul > "%ARGSFILE%"
+:write_loop
+@rem End-of-args check via `if defined`. A direct `if "%1"==""` form
+@rem crashes when an arg contains an unbalanced literal quote (e.g.
+@rem `name=hello"world`) because the bare %1 substitution drops the
+@rem orphaned `"` into the if-expression. Assigning %1 to TEST_ARG
+@rem under outer quotes protects against operator parsing, and
+@rem `if defined` distinguishes "end of args" (var stays unset) from
+@rem any non-empty value (var defined) — including empty-quoted "".
+@set "TEST_ARG="
+@set "TEST_ARG=%1"
+@if not defined TEST_ARG goto :write_done
+@rem Inline the writer (was :write_one) — DisableDelayedExpansion
+@rem during the set so a literal ! in the arg survives; then
+@rem EnableDelayedExpansion only for the echo so & | ^ < > inside the
+@rem variable value aren't interpreted as cmd operators. `echo(` (open
+@rem paren, no space) is the cmd idiom for echoing strings that may
+@rem start with reserved tokens.
+@setlocal DisableDelayedExpansion
+@set "ARG=%~1"
+@setlocal EnableDelayedExpansion
+@(echo(!ARG!) >> "%ARGSFILE%"
+@endlocal
+@endlocal
+@shift
+@goto :write_loop
+
+:write_done
+@rem Dispatch through goto labels so `%errorlevel%` expands on its own
+@rem line AFTER the interpreter exits. The previous inline-`&` form
+@rem captured the errorlevel of the preceding `@where` check (always 0)
+@rem because cmd parses the whole line before executing it. _dispatch.py
+@rem cleans up ARGSFILE itself; the no-interpreter branch still needs
+@rem an explicit @del since it never reaches _dispatch.py.
+@where py       >nul 2>nul && goto :run_py_slow
+@where python   >nul 2>nul && goto :run_python_slow
+@where python3  >nul 2>nul && goto :run_python3_slow
+@del "%ARGSFILE%"
+@echo launch: no python interpreter found on PATH 1>&2
+@exit /b 127
+
+:run_py_slow
+@py -3   "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%"
+@exit /b %errorlevel%
+
+:run_python_slow
+@python  "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%"
+@exit /b %errorlevel%
+
+:run_python3_slow
+@python3 "%~dp0_dispatch.py" "%SCRIPT%" "%ARGSFILE%"
+@exit /b %errorlevel%
+
+:has_more_than_nine
+@rem Returns errorlevel 1 if more than 9 args were passed. Subroutines
+@rem have their own positional-parameter scope so shifting here does
+@rem not disturb the caller's %1..%9. Uses the same `if defined`
+@rem pattern as :write_loop so a 10th arg containing an unbalanced
+@rem quote doesn't crash the test, and an empty-quoted 10th arg ("")
+@rem still trips detection.
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@shift
+@set "TEST_ARG="
+@set "TEST_ARG=%1"
+@if defined TEST_ARG exit /b 1
+@exit /b 0
 CMD_END

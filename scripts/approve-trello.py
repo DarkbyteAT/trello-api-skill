@@ -30,16 +30,55 @@ REJECT_PATTERNS = ("&&", "||", ";", "`", "$(", "<(")
 
 LITERAL_PREFIX = "${CLAUDE_PLUGIN_ROOT}/scripts/"
 
+# Match the first whitespace-separated token, honouring surrounding
+# quotes. A naive str.split() splits on the space inside a quoted path
+# like `"C:/Users/User Name/scripts/trello.py" GET /me`, leaving the
+# token as `"C:/Users/User`. This regex extracts the quoted value (or
+# the unquoted token) as one of the three groups.
+TOKEN_RE = re.compile(r'^\s*(?:"([^"]*)"|\'([^\']*)\'|(\S+))')
+
 # Explicit allow-list of script basenames that may be auto-approved.
 # Dropping a new file into scripts/ should be a deliberate decision, not
 # an accidental side-effect of the prefix match.
 ALLOWED_SCRIPTS = {"trello.py", "spec-manager.py"}
+
+# Launcher basenames. On Windows installs without PATHEXT including .PY,
+# Claude invokes the plugin scripts via launch.cmd (`launch.cmd trello
+# GET /me`). When the first token names the launcher, the actual target
+# script appears as the second token instead.
+LAUNCHER_BASENAMES = {"launch.cmd", "launch"}
 
 APPROVAL_JSON = (
     '{"hookSpecificOutput":{"hookEventName":"PreToolUse",'
     '"permissionDecision":"allow",'
     '"permissionDecisionReason":"Auto-approved: Trello plugin script"}}'
 )
+
+
+def _matches_resolved(token: str, prefix: str) -> bool:
+    """Prefix-match the first token against the resolved plugin root.
+
+    Windows filesystem paths are case-insensitive, so a CLAUDE_PLUGIN_ROOT
+    set as `C:/Users/Foo/...` would not match a command Claude emitted
+    using `c:/users/foo/...`. On Windows compare lowercased; elsewhere
+    (case-sensitive POSIX) compare verbatim.
+    """
+    if sys.platform == "win32":
+        return token.lower().startswith(prefix.lower())
+    return token.startswith(prefix)
+
+
+def _is_allowed_script(name: str) -> bool:
+    """ALLOWED_SCRIPTS membership check, case-insensitive on Windows.
+
+    On NTFS `Trello.py` and `trello.py` resolve to the same file, so
+    rejecting one but accepting the other would be a footgun. POSIX
+    filesystems treat them as distinct files, so the check stays
+    case-sensitive there.
+    """
+    if sys.platform == "win32":
+        return name.lower() in ALLOWED_SCRIPTS
+    return name in ALLOWED_SCRIPTS
 
 
 def strip_quoted(command: str) -> str:
@@ -109,18 +148,51 @@ def main() -> None:
         norm_command = command.replace("\\", "/")
         norm_resolved = f"{plugin_root}/scripts/".replace("\\", "/")
 
+        # Extract the first token, honouring surrounding quotes. On
+        # Windows installs where CLAUDE_PLUGIN_ROOT contains spaces
+        # (e.g. `C:\Users\User Name\...`), Claude emits the script
+        # path quoted. A naive split() would split on the space inside
+        # the quotes; TOKEN_RE pulls the quoted value out cleanly.
+        match = TOKEN_RE.match(norm_command) if norm_command else None
+        if not match:
+            return
+        clean_first_token = next((g for g in match.groups() if g is not None), "")
+
+        # Resolved-path branch is filesystem-path-shaped, so use the
+        # platform-aware comparison. LITERAL_PREFIX is a literal token
+        # (`${CLAUDE_PLUGIN_ROOT}/...`) and stays case-sensitive.
         if not (
-            norm_command.startswith(norm_resolved)
-            or norm_command.startswith(LITERAL_PREFIX)
+            _matches_resolved(clean_first_token, norm_resolved)
+            or clean_first_token.startswith(LITERAL_PREFIX)
         ):
             return
 
         # Basename allow-list: enforce that the targeted script is one
         # we actually intend to auto-approve. Use the normalised form so
-        # both separator styles work.
-        first_token = norm_command.split(maxsplit=1)[0]
-        basename = first_token.rsplit("/", 1)[-1]
-        if basename not in ALLOWED_SCRIPTS:
+        # both separator styles work. Windows is case-insensitive for
+        # filesystem paths, so compare lowercased throughout.
+        basename = clean_first_token.rsplit("/", 1)[-1]
+        basename_lower = basename.lower()
+
+        if basename_lower in LAUNCHER_BASENAMES:
+            # Launcher form: the actual target is the next token.
+            # Re-run TOKEN_RE against the remainder.
+            remaining = norm_command[match.end():]
+            match2 = TOKEN_RE.match(remaining) if remaining else None
+            if not match2:
+                return
+            second_token = next(
+                (g for g in match2.groups() if g is not None), ""
+            )
+            # launch.cmd takes the bare script name (e.g. `launch.cmd
+            # trello`), so append .py before checking ALLOWED_SCRIPTS.
+            target_script = (
+                second_token if second_token.endswith(".py")
+                else f"{second_token}.py"
+            )
+            if not _is_allowed_script(target_script):
+                return
+        elif not _is_allowed_script(basename):
             return
 
         unquoted = strip_quoted(command)
