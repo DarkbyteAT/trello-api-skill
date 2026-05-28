@@ -26,7 +26,7 @@ SAFE_PIPE_TARGETS = {
     "cat", "less", "tee", "cut", "tr", "sed", "awk", "column",
 }
 
-REJECT_PATTERNS = ("&&", "||", ";", "`", "$(", "<(")
+REJECT_PATTERNS = ("&&", "||", ";", "`", "$(", "<(", "\n", "\r")
 
 LITERAL_PREFIX = "${CLAUDE_PLUGIN_ROOT}/scripts/"
 
@@ -92,13 +92,6 @@ def main() -> None:
 
         command = (payload.get("tool_input") or {}).get("command") or ""
         if not command:
-            return
-
-        # Defence: raw \n or \r in an unquoted command acts as a shell
-        # command separator (newline ≡ `;`). Reject before any other
-        # check so a payload like "trello.py GET /me\ntouch /tmp/PWNED"
-        # can't slip past the chaining-operator scan.
-        if "\n" in command or "\r" in command:
             return
 
         plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
