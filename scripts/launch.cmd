@@ -41,7 +41,7 @@ exit 127
 # ============================================================
 :<<"CMD_END"
 :BATCH_MAIN
-@setlocal EnableDelayedExpansion
+@setlocal
 @set "TARGET=%~1"
 @if "%TARGET%"=="" (
     @echo launch: missing target script name 1>&2
@@ -50,17 +50,21 @@ exit 127
 @shift
 @set "SCRIPT=%~dp0%TARGET%.py"
 
-@set "ARGS="
-:GATHER
-@if "%~1"=="" goto :DISPATCH
-@set ARGS=!ARGS! "%~1"
-@shift
-@goto :GATHER
-
-:DISPATCH
-@where py       >nul 2>nul && ( py -3   "%SCRIPT%" !ARGS! & exit /b !errorlevel! )
-@where python   >nul 2>nul && ( python  "%SCRIPT%" !ARGS! & exit /b !errorlevel! )
-@where python3  >nul 2>nul && ( python3 "%SCRIPT%" !ARGS! & exit /b !errorlevel! )
+@where py       >nul 2>nul && goto :run_py
+@where python   >nul 2>nul && goto :run_python
+@where python3  >nul 2>nul && goto :run_python3
 @echo launch: no python interpreter found on PATH 1>&2
 @exit /b 127
+
+:run_py
+@py -3   "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+@exit /b %errorlevel%
+
+:run_python
+@python  "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+@exit /b %errorlevel%
+
+:run_python3
+@python3 "%SCRIPT%" %1 %2 %3 %4 %5 %6 %7 %8 %9
+@exit /b %errorlevel%
 CMD_END
