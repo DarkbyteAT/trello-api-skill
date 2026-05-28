@@ -7,7 +7,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/approve-trello.py",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" approve-trello",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd /c \"\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" approve-trello\"",
             "timeout": 5
           }
         ]
@@ -18,7 +23,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/trello-state-reconciler.py",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" trello-state-reconciler",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "cmd /c \"\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" trello-state-reconciler\"",
             "timeout": 10
           }
         ]
@@ -29,7 +39,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/dependency-gate.py",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" dependency-gate",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd /c \"\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" dependency-gate\"",
             "timeout": 5
           }
         ]
@@ -41,7 +56,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/api-error-detector.py",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" api-error-detector",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd /c \"\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" api-error-detector\"",
             "timeout": 5
           }
         ]
@@ -51,7 +71,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/engineering-team-bridge.py",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" engineering-team-bridge",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd /c \"\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" engineering-team-bridge\"",
             "timeout": 5
           }
         ]
@@ -61,7 +86,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python ${CLAUDE_PLUGIN_ROOT}/scripts/cascade-reminder.py",
+            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" cascade-reminder",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "cmd /c \"\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" cascade-reminder\"",
             "timeout": 5
           }
         ]
