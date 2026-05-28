@@ -30,6 +30,13 @@ REJECT_PATTERNS = ("&&", "||", ";", "`", "$(", "<(")
 
 LITERAL_PREFIX = "${CLAUDE_PLUGIN_ROOT}/scripts/"
 
+# Match the first whitespace-separated token, honouring surrounding
+# quotes. A naive str.split() splits on the space inside a quoted path
+# like `"C:/Users/User Name/scripts/trello.py" GET /me`, leaving the
+# token as `"C:/Users/User`. This regex extracts the quoted value (or
+# the unquoted token) as one of the three groups.
+TOKEN_RE = re.compile(r'^\s*(?:"([^"]*)"|\'([^\']*)\'|(\S+))')
+
 # Explicit allow-list of script basenames that may be auto-approved.
 # Dropping a new file into scripts/ should be a deliberate decision, not
 # an accidental side-effect of the prefix match.
@@ -109,12 +116,15 @@ def main() -> None:
         norm_command = command.replace("\\", "/")
         norm_resolved = f"{plugin_root}/scripts/".replace("\\", "/")
 
-        # Strip surrounding quotes from the first token. On Windows
-        # installs where CLAUDE_PLUGIN_ROOT contains spaces (e.g.
-        # `C:\Users\User Name\...`), Claude emits the script path
-        # quoted; without this, the prefix and basename checks fail.
-        first_token = norm_command.split(maxsplit=1)[0] if norm_command else ""
-        clean_first_token = first_token.strip("\"'")
+        # Extract the first token, honouring surrounding quotes. On
+        # Windows installs where CLAUDE_PLUGIN_ROOT contains spaces
+        # (e.g. `C:\Users\User Name\...`), Claude emits the script
+        # path quoted. A naive split() would split on the space inside
+        # the quotes; TOKEN_RE pulls the quoted value out cleanly.
+        match = TOKEN_RE.match(norm_command) if norm_command else None
+        if not match:
+            return
+        clean_first_token = next((g for g in match.groups() if g is not None), "")
 
         if not (
             clean_first_token.startswith(norm_resolved)
