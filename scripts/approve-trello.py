@@ -42,6 +42,12 @@ TOKEN_RE = re.compile(r'^\s*(?:"([^"]*)"|\'([^\']*)\'|(\S+))')
 # an accidental side-effect of the prefix match.
 ALLOWED_SCRIPTS = {"trello.py", "spec-manager.py"}
 
+# Launcher basenames. On Windows installs without PATHEXT including .PY,
+# Claude invokes the plugin scripts via launch.cmd (`launch.cmd trello
+# GET /me`). When the first token names the launcher, the actual target
+# script appears as the second token instead.
+LAUNCHER_BASENAMES = {"launch.cmd", "launch"}
+
 APPROVAL_JSON = (
     '{"hookSpecificOutput":{"hookEventName":"PreToolUse",'
     '"permissionDecision":"allow",'
@@ -134,9 +140,30 @@ def main() -> None:
 
         # Basename allow-list: enforce that the targeted script is one
         # we actually intend to auto-approve. Use the normalised form so
-        # both separator styles work.
+        # both separator styles work. Windows is case-insensitive for
+        # filesystem paths, so compare lowercased throughout.
         basename = clean_first_token.rsplit("/", 1)[-1]
-        if basename not in ALLOWED_SCRIPTS:
+        basename_lower = basename.lower()
+
+        if basename_lower in LAUNCHER_BASENAMES:
+            # Launcher form: the actual target is the next token.
+            # Re-run TOKEN_RE against the remainder.
+            remaining = norm_command[match.end():]
+            match2 = TOKEN_RE.match(remaining) if remaining else None
+            if not match2:
+                return
+            second_token = next(
+                (g for g in match2.groups() if g is not None), ""
+            )
+            # launch.cmd takes the bare script name (e.g. `launch.cmd
+            # trello`), so append .py before checking ALLOWED_SCRIPTS.
+            target_script = (
+                second_token if second_token.endswith(".py")
+                else f"{second_token}.py"
+            )
+            if target_script not in ALLOWED_SCRIPTS:
+                return
+        elif basename not in ALLOWED_SCRIPTS:
             return
 
         unquoted = strip_quoted(command)
