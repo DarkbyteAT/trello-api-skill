@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/approve-trello.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" approve-trello",
             "timeout": 5
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/trello-state-reconciler.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" trello-state-reconciler",
             "timeout": 10
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/dependency-gate.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" dependency-gate",
             "timeout": 5
           }
         ]
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/api-error-detector.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" api-error-detector",
             "timeout": 5
           }
         ]
@@ -51,17 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/engineering-team-bridge.sh",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/cascade-reminder.sh",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" cascade-reminder",
             "timeout": 5
           }
         ]

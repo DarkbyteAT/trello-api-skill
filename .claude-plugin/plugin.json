@@ -1,7 +1,7 @@
 {
   "name": "trello-api",
   "description": "Invoke any Trello REST API endpoint with auto-approved wrapper scripts, powered by the official OpenAPI spec with jq-based lookup",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "author": {
     "name": "DarkbyteAT"
   },
@@ -21,7 +21,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/approve-trello.sh"
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" approve-trello"
           }
         ]
       }
