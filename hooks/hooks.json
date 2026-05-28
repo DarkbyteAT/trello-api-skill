@@ -51,16 +51,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" engineering-team-bridge",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/scripts/launch.cmd\" cascade-reminder",
             "timeout": 5
           }
