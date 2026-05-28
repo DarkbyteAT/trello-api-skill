@@ -30,6 +30,16 @@ REJECT_PATTERNS = ("&&", "||", ";", "`", "$(", "<(")
 
 LITERAL_PREFIX = "${CLAUDE_PLUGIN_ROOT}/scripts/"
 
+# Explicit allow-list of script basenames that may be auto-approved.
+# Dropping a new file into scripts/ should be a deliberate decision, not
+# an accidental side-effect of the prefix match.
+ALLOWED_SCRIPTS = {"trello.py", "spec-manager.py"}
+
+# Optional leading interpreter token. Matches `python`, `python3`, `py`,
+# or `py -3` followed by whitespace. Anchored with ^ and bounded by \s so
+# `evil-python` does not match.
+INTERPRETER_PATTERN = re.compile(r"^(?:python3?|py(?:\s+-3)?)\s+")
+
 APPROVAL_JSON = (
     '{"hookSpecificOutput":{"hookEventName":"PreToolUse",'
     '"permissionDecision":"allow",'
@@ -40,13 +50,10 @@ APPROVAL_JSON = (
 def strip_quoted(command: str) -> str:
     """Strip double-quoted strings first, then single-quoted strings.
 
-    Mirrors the bash original: newlines collapsed first, then sed strips
-    `"[^"]*"` and `'[^']*'`. Double-quoted strings are removed FIRST so
-    that apostrophes inside double-quoted values are consumed before the
-    single-quote pass.
+    Double-quoted strings are removed FIRST so that apostrophes inside
+    double-quoted values are consumed before the single-quote pass.
     """
-    collapsed = command.replace("\n", " ")
-    no_double = re.sub(r'"[^"]*"', "", collapsed)
+    no_double = re.sub(r'"[^"]*"', "", command)
     no_single = re.sub(r"'[^']*'", "", no_double)
     return no_single
 
@@ -87,6 +94,13 @@ def main() -> None:
         if not command:
             return
 
+        # Defence: raw \n or \r in an unquoted command acts as a shell
+        # command separator (newline ≡ `;`). Reject before any other
+        # check so a payload like "trello.py GET /me\ntouch /tmp/PWNED"
+        # can't slip past the chaining-operator scan.
+        if "\n" in command or "\r" in command:
+            return
+
         plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT", "")
 
         # Defence-in-depth: if CLAUDE_PLUGIN_ROOT is missing, refuse to
@@ -96,18 +110,33 @@ def main() -> None:
         if not plugin_root:
             return
 
+        # Strip an optional leading interpreter token so that Windows
+        # invocations like `python ${CLAUDE_PLUGIN_ROOT}/scripts/trello.py`
+        # and `py -3 ...` get the same treatment as the bare script path.
+        # The shell-chaining and pipe checks still run against the ORIGINAL
+        # command so we don't change the meaning of subsequent metachars.
+        remainder = INTERPRETER_PATTERN.sub("", command, count=1)
+
         # Normalise path separators so a Windows CLAUDE_PLUGIN_ROOT (which
         # uses backslashes) matches commands written with either separator.
-        # Only used for the prefix check — the rest of the validation runs
-        # against the ORIGINAL command so backslashes inside quoted card
-        # descriptions are not tampered with.
-        norm_command = command.replace("\\", "/")
+        # Only used for the prefix/basename checks — the rest of the
+        # validation runs against the ORIGINAL command so backslashes
+        # inside quoted card descriptions are not tampered with.
+        norm_remainder = remainder.replace("\\", "/")
         norm_resolved = f"{plugin_root}/scripts/".replace("\\", "/")
 
         if not (
-            norm_command.startswith(norm_resolved)
-            or norm_command.startswith(LITERAL_PREFIX)
+            norm_remainder.startswith(norm_resolved)
+            or norm_remainder.startswith(LITERAL_PREFIX)
         ):
+            return
+
+        # Basename allow-list: enforce that the targeted script is one
+        # we actually intend to auto-approve. Use the normalised form so
+        # both separator styles work; tolerate either in the raw token too.
+        first_token = norm_remainder.split(maxsplit=1)[0] if norm_remainder else ""
+        basename = first_token.rsplit("/", 1)[-1]
+        if basename not in ALLOWED_SCRIPTS:
             return
 
         unquoted = strip_quoted(command)
