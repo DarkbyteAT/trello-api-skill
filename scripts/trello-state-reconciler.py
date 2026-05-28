@@ -16,9 +16,9 @@ from pathlib import Path
 
 
 CARD_REFERENCE_RE = re.compile(
-    r"trello\.py (?:GET|POST|PUT|DELETE) \S*/cards"
+    r"trello(?:\.py)? (?:GET|POST|PUT|DELETE) \S*/cards"
 )
-MUTATION_RE = re.compile(r"trello\.py (?:POST|PUT|DELETE|PATCH)\b")
+MUTATION_RE = re.compile(r"trello(?:\.py)? (?:POST|PUT|DELETE|PATCH)\b")
 
 
 BLOCK_JSON = (
