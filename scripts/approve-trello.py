@@ -26,7 +26,7 @@ SAFE_PIPE_TARGETS = {
     "cat", "less", "tee", "cut", "tr", "sed", "awk", "column",
 }
 
-REJECT_PATTERNS = ("&&", "||", ";", "`", "$(", "<(", "\n", "\r")
+REJECT_PATTERNS = ("&&", "||", ";", "`", "$(", "<(")
 
 LITERAL_PREFIX = "${CLAUDE_PLUGIN_ROOT}/scripts/"
 
@@ -45,10 +45,13 @@ APPROVAL_JSON = (
 def strip_quoted(command: str) -> str:
     """Strip double-quoted strings first, then single-quoted strings.
 
-    Double-quoted strings are removed FIRST so that apostrophes inside
-    double-quoted values are consumed before the single-quote pass.
+    Mirrors the bash original: newlines collapsed to spaces first (BSD sed
+    only matches within single lines), then sed strips `"[^"]*"` and
+    `'[^']*'`. Double-quoted strings are removed FIRST so that apostrophes
+    inside double-quoted values are consumed before the single-quote pass.
     """
-    no_double = re.sub(r'"[^"]*"', "", command)
+    collapsed = command.replace("\n", " ")
+    no_double = re.sub(r'"[^"]*"', "", collapsed)
     no_single = re.sub(r"'[^']*'", "", no_double)
     return no_single
 
