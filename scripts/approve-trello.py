@@ -55,6 +55,19 @@ APPROVAL_JSON = (
 )
 
 
+def _matches_resolved(token: str, prefix: str) -> bool:
+    """Prefix-match the first token against the resolved plugin root.
+
+    Windows filesystem paths are case-insensitive, so a CLAUDE_PLUGIN_ROOT
+    set as `C:/Users/Foo/...` would not match a command Claude emitted
+    using `c:/users/foo/...`. On Windows compare lowercased; elsewhere
+    (case-sensitive POSIX) compare verbatim.
+    """
+    if sys.platform == "win32":
+        return token.lower().startswith(prefix.lower())
+    return token.startswith(prefix)
+
+
 def strip_quoted(command: str) -> str:
     """Strip double-quoted strings first, then single-quoted strings.
 
@@ -132,8 +145,11 @@ def main() -> None:
             return
         clean_first_token = next((g for g in match.groups() if g is not None), "")
 
+        # Resolved-path branch is filesystem-path-shaped, so use the
+        # platform-aware comparison. LITERAL_PREFIX is a literal token
+        # (`${CLAUDE_PLUGIN_ROOT}/...`) and stays case-sensitive.
         if not (
-            clean_first_token.startswith(norm_resolved)
+            _matches_resolved(clean_first_token, norm_resolved)
             or clean_first_token.startswith(LITERAL_PREFIX)
         ):
             return
