@@ -89,7 +89,7 @@ digraph execute_wave {
 
     subgraph cluster_dispatch {
         label="Dispatch (parallel)";
-        "Launch one agent per card (run_in_background)" [shape=box];
+        "Dispatch one subagent per card (single tool-call block)" [shape=box];
     }
 
     subgraph cluster_review {
@@ -122,8 +122,8 @@ digraph execute_wave {
         "Clean up worktrees and branches" -> "Pull main";
     }
 
-    "Create worktrees (one per card)" -> "Launch one agent per card (run_in_background)";
-    "Launch one agent per card (run_in_background)" -> "Review agent output";
+    "Create worktrees (one per card)" -> "Dispatch one subagent per card (single tool-call block)";
+    "Dispatch one subagent per card (single tool-call block)" -> "Review agent output";
     "Move card Doing → Reviewing" -> "Triage automated review comments on PRs";
 }
 ```
